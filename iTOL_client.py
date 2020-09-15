@@ -25,15 +25,18 @@ class ITOL_session(object):
         elif what == 'tree':
             DELETE_URL = 'https://itol.embl.de/ajax/personal/tree_remove.cgi'
             respond = self.session.post(DELETE_URL, data={'i':id_})
-        if 'Please login.' in respond:
-            self.session = self.login()
-            return self.do_login( what, id_)
+        if 'Please login.' in respond.text.rstrip():
+            self.session = self.do_login()
+            return self.delete( what, id_)
         self.data = self.get_data()
         return respond.text.rstrip()
         
     def get_data(self):
         respond = self.session.post("https://itol.embl.de/personal_page.cgi")
         msg = respond.text.rstrip()
+        if 'Please login.' in msg:
+            self.session = self.do_login()
+            return self.get_data()
         between_script_tags = re.search('<script>(.*)</script>', msg)
         script_str = between_script_tags.string[between_script_tags.start():between_script_tags.end()]
         script_str = script_str.split("var ws = ")[1].replace(';$(document).ready(function() {initializeWorkspace(); });</script>', '')
